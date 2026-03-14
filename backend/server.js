@@ -16,6 +16,7 @@ mongoose.connect(process.env.MONGO_URI)
 // Schema
 const userSchema = new mongoose.Schema({
     name:String,
+    profilePhoto:String,
     username:String,
     email:String,
     password:String,
@@ -35,7 +36,7 @@ const User = mongoose.model("User", userSchema);
 
 
 // GET all users
-app.get("/users", async (req,res)=>{
+app.get("/api/users", async (req,res)=>{
     const users = await User.find();
     res.json(users);
 });
@@ -72,10 +73,11 @@ app.get("/user/state/:state", async (req,res)=>{
 // POST add user
 app.post("/user", async (req,res)=>{
 
-    const {name,email,password,age,city,state,skills} = req.body;
+    const {name, email, password, age, city, state, skills, profilePhoto} = req.body;
 
     const user = new User({
         name,
+        profilePhoto,
         email,
         password,
         age,
@@ -150,10 +152,42 @@ app.patch("/user/state/:state", async (req,res)=>{
 });
 
 
+// PATCH update user for edit profile
+app.patch("/api/users/:email", async (req, res) => {
+    try {
+        const { email } = req.params;
+        const updatedData = req.body;
+        
+        // Remove password / email from being updated easily this way, or handle safely
+        delete updatedData.email;
+        delete updatedData.password;
+        delete updatedData.username; // Prevent changing username to avoid collisions
+
+        if (updatedData.skills && typeof updatedData.skills === 'string') {
+            updatedData.skills = updatedData.skills.split(",").map(s => s.trim());
+        }
+        if (updatedData.projects && typeof updatedData.projects === 'string') {
+            updatedData.projects = updatedData.projects.split(",").map(p => p.trim());
+        }
+
+        const user = await User.findOneAndUpdate({ email }, { $set: updatedData }, { new: true });
+        
+        if (!user) {
+            return res.status(404).json({ message: "User not found." });
+        }
+
+        res.json({ message: "Profile updated successfully.", user });
+    } catch (err) {
+        console.error("Update profile error:", err);
+        res.status(500).json({ message: "Server error. " + err.message });
+    }
+});
+
+
 // POST signup
 app.post("/api/auth/signup", async (req, res) => {
     try {
-        const { username, email, password, collegeName, age, city, state, skills, github, twitter, leetcode, youtube, projects } = req.body;
+        const { username, email, password, profilePhoto, collegeName, age, city, state, skills, github, twitter, leetcode, youtube, projects } = req.body;
 
         if (!username || !email || !password) {
             return res.status(400).json({ message: "Username, email and password are required." });
@@ -164,6 +198,7 @@ app.post("/api/auth/signup", async (req, res) => {
 
         const user = new User({
             name: username,
+            profilePhoto,
             username,
             email,
             password,
