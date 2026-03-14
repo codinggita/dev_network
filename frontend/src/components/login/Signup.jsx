@@ -28,6 +28,7 @@ const Signup = () => {
   const navigate = useNavigate()
   const [form, setForm] = useState({
     username: '', email: '', password: '', confirmPassword: '',
+    profilePhoto: '',
     collegeName: '', age: '', city: '', state: '',
     skills: '', github: '', twitter: '', leetcode: '', youtube: '', projects: ''
   })
@@ -53,6 +54,7 @@ const Signup = () => {
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           username: form.username, email: form.email, password: form.password,
+          profilePhoto: form.profilePhoto,
           collegeName: form.collegeName, age: form.age, city: form.city, state: form.state,
           skills: form.skills, github: form.github, twitter: form.twitter,
           leetcode: form.leetcode, youtube: form.youtube, projects: form.projects
@@ -112,6 +114,7 @@ const Signup = () => {
 
         <form onSubmit={handleSubmit}>
           <p style={{ color: '#FACC15', fontSize: '11px', fontWeight: '700', letterSpacing: '1.2px', textTransform: 'uppercase', marginBottom: '12px', fontFamily: 'Inter, system-ui, sans-serif' }}>Account Information</p>
+          <Field label="Profile Photo Link" name="profilePhoto" placeholder="https://example.com/photo.jpg" value={form.profilePhoto} onChange={handleChange} />
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '0 16px' }}>
             <Field label="Username *" name="username" placeholder="cooldev123" value={form.username} onChange={handleChange} />
             <Field label="Email Address *" name="email" type="email" placeholder="you@example.com" value={form.email} onChange={handleChange} />
