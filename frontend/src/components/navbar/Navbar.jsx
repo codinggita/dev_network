@@ -51,6 +51,21 @@ const Navbar = () => {
         </button>
 
         <button
+          onClick={() => navigate('/teams')}
+          style={{
+            padding: '10px 24px', background: 'transparent',
+            color: location.pathname === '/teams' ? '#FACC15' : '#e5e7eb',
+            fontSize: '14px', fontWeight: '600',
+            border: location.pathname === '/teams' ? '1px solid rgba(250,204,21,0.4)' : '1px solid transparent', 
+            borderRadius: '8px', cursor: 'pointer', transition: 'all 0.2s'
+          }}
+          onMouseEnter={e => e.target.style.color = '#FACC15'}
+          onMouseLeave={e => e.target.style.color = location.pathname === '/teams' ? '#FACC15' : '#e5e7eb'}
+        >
+          Teams
+        </button>
+
+        <button
           onClick={() => navigate('/profile')}
           style={{
             padding: '10px 24px', background: 'transparent',

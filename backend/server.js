@@ -29,8 +29,19 @@ const userSchema = new mongoose.Schema({
     twitter:String,
     leetcode:String,
     youtube:String,
-    projects:[String]
+    projects:[String],
+    teamName: { type: String, default: null }
 });
+
+const teamSchema = new mongoose.Schema({
+    name: { type: String, required: true, unique: true },
+    leader: { type: String, required: true },
+    members: [String], // Array of emails of the members
+    joinRequests: [String], // Array of emails requesting to join
+    projects: [String]
+});
+
+const Team = mongoose.model("Team", teamSchema);
 
 const User = mongoose.model("User", userSchema);
 
@@ -180,6 +191,130 @@ app.patch("/api/users/:email", async (req, res) => {
     } catch (err) {
         console.error("Update profile error:", err);
         res.status(500).json({ message: "Server error. " + err.message });
+    }
+});
+
+
+// GET all teams
+app.get("/api/teams", async (req, res) => {
+    try {
+        const teams = await Team.find();
+        // Populate members data manually since members is an array of emails
+        const populatedTeams = await Promise.all(teams.map(async (team) => {
+            const membersData = await User.find({ email: { $in: team.members } }, 'name username profilePhoto skills email role');
+            const requestsData = await User.find({ email: { $in: team.joinRequests || [] } }, 'name username profilePhoto skills email role');
+            return { ...team.toObject(), memberDetails: membersData, requestDetails: requestsData };
+        }));
+        res.json(populatedTeams);
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error fetching teams" });
+    }
+});
+
+// POST create team
+app.post("/api/teams", async (req, res) => {
+    try {
+        const { name, email } = req.body;
+        if (!name || !email) return res.status(400).json({ message: "Team name and email are required" });
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        if (user.teamName) return res.status(400).json({ message: "User is already in a team" });
+
+        const existingTeam = await Team.findOne({ name });
+        if (existingTeam) return res.status(400).json({ message: "Team name already exists" });
+
+        const team = new Team({ name, leader: email, members: [email], joinRequests: [], projects: [] });
+        await team.save();
+
+        user.teamName = name;
+        await user.save();
+
+        res.json({ message: "Team created successfully", team, user });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error creating team" });
+    }
+});
+
+// POST request to join team
+app.post("/api/teams/:name/request-join", async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { email } = req.body;
+
+        const user = await User.findOne({ email });
+        if (!user) return res.status(404).json({ message: "User not found" });
+        if (user.teamName) return res.status(400).json({ message: "User is already in a team" });
+
+        const team = await Team.findOne({ name });
+        if (!team) return res.status(404).json({ message: "Team not found" });
+        if (team.members.length >= 4) return res.status(400).json({ message: "Team is already full (max 4 members)" });
+        if (team.joinRequests.includes(email)) return res.status(400).json({ message: "Join request already sent" });
+
+        team.joinRequests.push(email);
+        await team.save();
+
+        res.json({ message: "Join request sent successfully", team });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error requesting to join team" });
+    }
+});
+
+// POST accept join request
+app.post("/api/teams/:name/accept-join", async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { leaderEmail, requesterEmail } = req.body;
+
+        const team = await Team.findOne({ name });
+        if (!team) return res.status(404).json({ message: "Team not found" });
+        
+        if (team.leader !== leaderEmail) return res.status(403).json({ message: "Only the team leader can accept requests" });
+        if (!team.joinRequests.includes(requesterEmail)) return res.status(400).json({ message: "No join request found for this user" });
+        if (team.members.length >= 4) return res.status(400).json({ message: "Team is already full" });
+
+        const user = await User.findOne({ email: requesterEmail });
+        if (!user) return res.status(404).json({ message: "Requester not found" });
+        if (user.teamName) return res.status(400).json({ message: "User is already in a team" });
+
+        // Move from requests to members
+        team.joinRequests = team.joinRequests.filter(e => e !== requesterEmail);
+        team.members.push(requesterEmail);
+        await team.save();
+
+        user.teamName = name;
+        await user.save();
+
+        res.json({ message: "Join request accepted", team });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error accepting join request" });
+    }
+});
+
+// POST reject join request
+app.post("/api/teams/:name/reject-join", async (req, res) => {
+    try {
+        const { name } = req.params;
+        const { leaderEmail, requesterEmail } = req.body;
+
+        const team = await Team.findOne({ name });
+        if (!team) return res.status(404).json({ message: "Team not found" });
+        
+        if (team.leader !== leaderEmail) return res.status(403).json({ message: "Only the team leader can reject requests" });
+        if (!team.joinRequests.includes(requesterEmail)) return res.status(400).json({ message: "No join request found for this user" });
+
+        // Remove from requests
+        team.joinRequests = team.joinRequests.filter(e => e !== requesterEmail);
+        await team.save();
+
+        res.json({ message: "Join request rejected", team });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ message: "Error rejecting join request" });
     }
 });
 

@@ -141,6 +141,10 @@ const Profile = () => {
               <h2 style={{ color: '#FACC15', fontSize: '13px', fontWeight: '700', letterSpacing: '1px', textTransform: 'uppercase', marginBottom: '16px' }}>Personal Details</h2>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 <div style={{ color: '#d1d5db', fontSize: '15px', display: 'flex', alignItems: 'center' }}>
+                  <span style={{ color: '#6b7280', display: 'inline-block', width: '80px' }}>Team:</span> 
+                  {user.teamName ? <span style={{ color: '#FACC15', fontWeight: '700' }}>{user.teamName}</span> : <span style={{ color: '#6b7280' }}>Not in a team</span>}
+                </div>
+                <div style={{ color: '#d1d5db', fontSize: '15px', display: 'flex', alignItems: 'center' }}>
                   <span style={{ color: '#6b7280', display: 'inline-block', width: '80px' }}>College:</span> 
                   {isEditing ? <input type="text" name="collegeName" value={form.collegeName} onChange={handleChange} style={{...inputStyle, margin: 0, flex: 1}} /> : (user.collegeName || '—')}
                 </div>
