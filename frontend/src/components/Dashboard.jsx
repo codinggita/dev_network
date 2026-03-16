@@ -271,6 +271,28 @@ const Dashboard = () => {
                     <h3 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>{u.name}</h3>
                     <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>@{u.username}</p>
                     {u.collegeName && <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>🎓 {u.collegeName}</p>}
+                    {/* In Team Status */}
+                    <div style={{ marginTop: '6px' }}>
+                      {u.teamName ? (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'rgba(250,204,21,0.12)', color: '#FACC15',
+                          border: '1px solid rgba(250,204,21,0.3)',
+                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '700'
+                        }}>
+                          👥 {u.teamName}
+                        </span>
+                      ) : (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'rgba(107,114,128,0.12)', color: '#6b7280',
+                          border: '1px solid rgba(107,114,128,0.3)',
+                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600'
+                        }}>
+                          No Team
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 

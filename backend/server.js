@@ -35,6 +35,8 @@ const userSchema = new mongoose.Schema({
 
 const teamSchema = new mongoose.Schema({
     name: { type: String, required: true, unique: true },
+    title: { type: String, default: "" },
+    description: { type: String, default: "" },
     leader: { type: String, required: true },
     members: [String], // Array of emails of the members
     joinRequests: [String], // Array of emails requesting to join
@@ -216,7 +218,7 @@ app.get("/api/teams", async (req, res) => {
 // POST create team
 app.post("/api/teams", async (req, res) => {
     try {
-        const { name, email } = req.body;
+        const { name, title, description, email } = req.body;
         if (!name || !email) return res.status(400).json({ message: "Team name and email are required" });
 
         const user = await User.findOne({ email });
@@ -226,7 +228,15 @@ app.post("/api/teams", async (req, res) => {
         const existingTeam = await Team.findOne({ name });
         if (existingTeam) return res.status(400).json({ message: "Team name already exists" });
 
-        const team = new Team({ name, leader: email, members: [email], joinRequests: [], projects: [] });
+        const team = new Team({ 
+            name, 
+            title: title || "", 
+            description: description || "", 
+            leader: email, 
+            members: [email], 
+            joinRequests: [], 
+            projects: [] 
+        });
         await team.save();
 
         user.teamName = name;
