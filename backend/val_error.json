@@ -1,0 +1,13 @@
+{
+  "leader": {
+    "name": "ValidatorError",
+    "message": "Path `leader` is required.",
+    "properties": {
+      "message": "Path `leader` is required.",
+      "type": "required",
+      "path": "leader"
+    },
+    "kind": "required",
+    "path": "leader"
+  }
+}

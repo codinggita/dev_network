@@ -12,6 +12,8 @@ const Dashboard = () => {
     age: '', city: '', state: '', skills: '', college: ''
   })
   const [showFilters, setShowFilters] = useState(false)
+  const [myTeam, setMyTeam] = useState(null) // the team where current user is leader
+  const [invitingUser, setInvitingUser] = useState(null) // email being invited
 
   useEffect(() => {
     const data = localStorage.getItem('devnetwork_user');
@@ -28,10 +30,8 @@ const Dashboard = () => {
         const res = await fetch('/api/users');
         if (res.ok) {
           const fetchedUsers = await res.json();
-          // Filter out the logged in user from the grid
           setAllUsers(fetchedUsers.filter(u => u.email !== JSON.parse(localStorage.getItem('devnetwork_user'))?.email));
         } else {
-          // If the proxy route `/api/users` doesn't exist, try `/users` since backend route might not have `/api` prefix
           const fallbackRes = await fetch('/users');
           if (fallbackRes.ok) {
             const fetchedUsers = await fallbackRes.json();
@@ -45,7 +45,52 @@ const Dashboard = () => {
       }
     };
     fetchUsers();
+
+    // Fetch teams to check if the current user is a leader
+    const fetchTeams = async () => {
+      try {
+        const currentUser = JSON.parse(localStorage.getItem('devnetwork_user'));
+        const res = await fetch('/api/teams');
+        if (res.ok) {
+          const teams = await res.json();
+          const led = teams.find(t => t.leader === currentUser?.email);
+          setMyTeam(led || null);
+        }
+      } catch (err) {
+        console.error("Failed to fetch teams", err);
+      }
+    };
+    fetchTeams();
   }, []);
+
+  const handleInviteUser = async (inviteeEmail) => {
+    if (!myTeam) return;
+    setInvitingUser(inviteeEmail);
+    try {
+      const res = await fetch(`/api/teams/${encodeURIComponent(myTeam.name)}/invite`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ leaderEmail: user.email, inviteeEmail })
+      });
+      const data = await res.json();
+      if (res.ok) {
+        // Refresh myTeam so the button reflects new invites
+        const teamsRes = await fetch('/api/teams');
+        if (teamsRes.ok) {
+          const teams = await teamsRes.json();
+          const led = teams.find(t => t.leader === user.email);
+          setMyTeam(led || null);
+        }
+        alert('Invite sent successfully!');
+      } else {
+        alert(data.message || 'Failed to send invite');
+      }
+    } catch (err) {
+      alert('Error reaching server');
+    } finally {
+      setInvitingUser(null);
+    }
+  };
 
   const filteredUsers = allUsers.filter(u => {
     // Text search query
@@ -73,17 +118,19 @@ const Dashboard = () => {
   if (!user) return null;
 
   return (
-    <div style={{ minHeight: '100vh', background: '#0a0a0a', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#0a0a0a', fontFamily: 'Inter, system-ui, sans-serif' }}>
+      <Navbar />
+
+      <div style={{ flex: 1, marginLeft: '220px', position: 'relative' }}>
       {/* Background glow */}
       <div style={{
-        position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)',
+        position: 'fixed', top: '10%', left: 'calc(220px + 50%)', transform: 'translateX(-50%)',
         width: '700px', height: '350px',
         background: 'radial-gradient(ellipse at center, rgba(250,204,21,0.10) 0%, transparent 70%)',
         pointerEvents: 'none', zIndex: 0
       }} />
 
       {/* Navbar / Top Bar */}
-      <Navbar />
 
       {/* Hero Section */}
       <div style={{
@@ -224,6 +271,28 @@ const Dashboard = () => {
                     <h3 style={{ color: '#ffffff', fontSize: '18px', fontWeight: '700', margin: '0 0 4px 0' }}>{u.name}</h3>
                     <p style={{ color: '#9ca3af', fontSize: '13px', margin: 0 }}>@{u.username}</p>
                     {u.collegeName && <p style={{ color: '#6b7280', fontSize: '12px', margin: '4px 0 0', display: 'flex', alignItems: 'center', gap: '4px' }}>🎓 {u.collegeName}</p>}
+                    {/* In Team Status */}
+                    <div style={{ marginTop: '6px' }}>
+                      {u.teamName ? (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'rgba(250,204,21,0.12)', color: '#FACC15',
+                          border: '1px solid rgba(250,204,21,0.3)',
+                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '700'
+                        }}>
+                          👥 {u.teamName}
+                        </span>
+                      ) : (
+                        <span style={{
+                          display: 'inline-flex', alignItems: 'center', gap: '4px',
+                          background: 'rgba(107,114,128,0.12)', color: '#6b7280',
+                          border: '1px solid rgba(107,114,128,0.3)',
+                          padding: '2px 8px', borderRadius: '20px', fontSize: '11px', fontWeight: '600'
+                        }}>
+                          No Team
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
 
@@ -241,10 +310,29 @@ const Dashboard = () => {
                   </div>
                 )}
 
-                <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #222' }}>
+                <div style={{ display: 'flex', gap: '12px', marginTop: 'auto', paddingTop: '16px', borderTop: '1px solid #222', flexWrap: 'wrap', alignItems: 'center' }}>
                   {u.github && <a href={u.github.startsWith('http') ? u.github : `https://${u.github}`} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>💻 GitHub</a>}
                   {u.twitter && <a href={u.twitter.startsWith('http') ? u.twitter : `https://${u.twitter}`} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>🐦 Twitter</a>}
                   {u.leetcode && <a href={u.leetcode.startsWith('http') ? u.leetcode : `https://${u.leetcode}`} target="_blank" rel="noreferrer" style={{ color: '#9ca3af', textDecoration: 'none', fontSize: '12px', display: 'flex', alignItems: 'center', gap: '4px' }}>⚡ LeetCode</a>}
+                  {/* Invite button: shown only to team leaders, for users not already in a team */}
+                  {myTeam && !u.teamName && myTeam.members.length < 4 && (
+                    (myTeam.invites || []).includes(u.email) ? (
+                      <span style={{ marginLeft: 'auto', color: '#6b7280', fontSize: '11px', fontWeight: '600', border: '1px solid #2d2d2d', padding: '4px 10px', borderRadius: '6px' }}>Invite Sent ✓</span>
+                    ) : (
+                      <button
+                        onClick={() => handleInviteUser(u.email)}
+                        disabled={invitingUser === u.email}
+                        style={{
+                          marginLeft: 'auto', background: 'linear-gradient(135deg, #FACC15, #F59E0B)',
+                          color: '#0a0a0a', border: 'none', padding: '5px 12px', borderRadius: '6px',
+                          fontSize: '11px', fontWeight: '700', cursor: invitingUser === u.email ? 'not-allowed' : 'pointer',
+                          opacity: invitingUser === u.email ? 0.7 : 1
+                        }}
+                      >
+                        {invitingUser === u.email ? 'Inviting...' : '+ Invite to My Team'}
+                      </button>
+                    )
+                  )}
                 </div>
               </div>
             ))}
@@ -256,6 +344,7 @@ const Dashboard = () => {
         )}
       </div>
 
+      </div>
     </div>
   )
 }

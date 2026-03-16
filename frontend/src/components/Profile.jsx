@@ -76,17 +76,21 @@ const Profile = () => {
   };
 
   return (
-    <div style={{ minHeight: '100vh', width: '100%', background: '#0a0a0a', paddingBottom: '40px', fontFamily: 'Inter, system-ui, sans-serif' }}>
+    <div style={{ minHeight: '100vh', display: 'flex', background: '#0a0a0a', fontFamily: 'Inter, system-ui, sans-serif' }}>
       <Navbar />
-      
-      <div style={{
-        position: 'fixed', top: '10%', left: '50%', transform: 'translateX(-50%)',
-        width: '600px', height: '300px',
-        background: 'radial-gradient(ellipse at center, rgba(250,204,21,0.10) 0%, transparent 70%)',
-        pointerEvents: 'none', zIndex: 0
-      }} />
 
-      <div style={{ width: '100%', maxWidth: '700px', margin: '40px auto 0', position: 'relative', zIndex: 1 }}>
+      {/* Main content area — sits to the right of the fixed 220px sidebar */}
+      <div style={{ flex: 1, marginLeft: '220px', paddingBottom: '60px', paddingTop: '40px', paddingLeft: '32px', paddingRight: '32px', position: 'relative' }}>
+
+        {/* Background glow */}
+        <div style={{
+          position: 'fixed', top: '10%', left: 'calc(220px + 50%)', transform: 'translateX(-50%)',
+          width: '600px', height: '300px',
+          background: 'radial-gradient(ellipse at center, rgba(250,204,21,0.10) 0%, transparent 70%)',
+          pointerEvents: 'none', zIndex: 0
+        }} />
+
+        <div style={{ width: '100%', maxWidth: '760px', margin: '0 auto', position: 'relative', zIndex: 1 }}>
 
         <div style={{
           background: 'linear-gradient(135deg, #111111 0%, #161616 100%)',
@@ -219,6 +223,7 @@ const Profile = () => {
             </div>
           </div>
 
+        </div>
         </div>
       </div>
     </div>
